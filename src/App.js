@@ -1,3 +1,5 @@
+import { Button, Card, CardContent, Paper, Typography } from '@mui/material';
+import { Box } from '@mui/system';
 import { useState } from 'react';
 import roster from './testRoster';
 
@@ -9,21 +11,28 @@ const getCookie = (cookieName) => {
   return decodeURIComponent(!!cookieString ? cookieString.toString().replace(/^[^=]+./,'') : '');
 }
 
-// const getCookieObject = (cookieName) => {
-//   // Get name followed by anything except a semicolon
-//   const cookieString = RegExp(''+cookieName+'[^;]+').exec(document.cookie);
-//   // Return everything after the equal sign, or an empty string if the cookie name not found
-//   return decodeURIComponent(!!cookieString ? cookieString.toString().replace(/^[^=]+./,'') : '');
-// }
+  const defaultGame = {
+    team_id: 1,
+    opponent: "The other guys",
+    is_winner: true,
+    score_home_team: 14,
+    score_away_team: 8,
+    innings: 7,
+    is_home_team: true,
+}
+
+let gameDetails = '';
+if (getCookie('gameObject')) {
+  gameDetails = JSON.parse(getCookie('gameObject'));
+  console.log('this is gameDetails: ', gameDetails);
+}
 
 function App () {
-  const [clickCount, setClickCount] = useState(getCookie("count") || 0);
-  const [userName, setUserName] = useState(getCookie("username" || ""));
-  const [userNameIsEditable, setUserNameIsEditable] = useState(false);
   const [currentBatter, setCurrentBatter] = useState(getCookie('currentBatter') || 0);
   const [gameInProgress, setGameInProgess] = useState(getCookie('playerObject') ? true:false);
-  const [currentInning, setCurrentInning] = useState(getCookie('currentInning') || { inning: 1, half: 'away' });
+  const [currentInning, setCurrentInning] = useState(getCookie('currentInning') ? JSON.parse(getCookie('currentInning')) : { inning: 1, half: 'away' });
   const [currentOut, setCurrentOut] = useState(getCookie('outs') || 0);
+  const [opponent, setOpponent] = useState(gameDetails.opponent||'');
   
   
   const lineupSet = () => {
@@ -33,7 +42,7 @@ function App () {
       // console.log('this is a: ', a, 'this is b: ', b);
       return a.lineup_number - b.lineup_number;
     });
-    console.log("This is sortRoster in lineupSet: ", sortRoster);
+    // console.log("This is sortRoster in lineupSet: ", sortRoster);
     const playerObjectArr = [];
     // loop through the sorted batting order and push an object with default game start and each user id, position and place in lineup
     // to an array that will be stored in a cookie to hold game data until the game in completed and sent to db
@@ -62,19 +71,27 @@ function App () {
 
   const nextBatter = () => {
     let batter = Number(getCookie('currentBatter'));
-    console.log('this is batter: ', batter);
+    // console.log('this is batter: ', batter);
     let lineupLength = JSON.parse(getCookie('playerObject')).length;
-    console.log('this is lineupLength: ',lineupLength);
+    // console.log('this is lineupLength: ',lineupLength);
     if ((Number(batter)+1) === lineupLength) {
       setCookie('currentBatter', 0, 365);
-      console.log('this is now currentBatter(end of lineup, goes to 0): ', getCookie('currentBatter'));
+      // console.log('this is now currentBatter(end of lineup, goes to 0): ', getCookie('currentBatter'));
       setCurrentBatter(0);
       return 0;
     } else {
       setCookie('currentBatter', (batter + 1), 365);
-      console.log('this is now currentBatter(increase by 1): ', getCookie('currentBatter'));
+      // console.log('this is now currentBatter(increase by 1): ', getCookie('currentBatter'));
       setCurrentBatter(batter + 1);
       return batter + 1;
+    }
+  }
+
+  const onDeck = () => {
+    if (Number(currentBatter) === testData.length-1) {
+      return 0;
+    } else {
+      return Number(currentBatter)+1;
     }
   }
 
@@ -103,9 +120,14 @@ function App () {
   // Function for clearing cookies, sending game data to db and ending game
   const endGame = () => {
     setCookieObject('playerObject', null, 0);
+    setCookieObject('currentInning', null, 0);
+    setCookieObject('outs', null, 0);
+    setCookieObject('gameObject', null, 0);
     setGameInProgess(false);
     setCurrentBatter(0);
     setCurrentInning({ inning: 1, half: 'away' });
+    setCurrentOut(0);
+    setOpponent('');
   }
   // This will check for the cookie 'playerObject'and set a variable if it exists
   let testData;
@@ -133,117 +155,111 @@ function App () {
       cname + "=" + JSON.stringify(cvalue) + ";" + expires + ";path=/";
   };
 
-  const handleClick = () => {
-    const newCount = Number(clickCount) + 1;
-
-    // This is making a cookie called count with the newCount amount
-    // It will replace anything called count
-    setCookie("count", newCount, 365);
-    setClickCount(getCookie("count"));
-  };
-
-  const editUsername = () => {
-    setUserNameIsEditable(true);
-  };
-
-  const saveUsername = (e) => {
-    // DO COOKIE WORK HERE
-    setCookie("username", userName, 365);
-    // setCookieObject('playerObject', [{
-    //   user_id: 1,
-    //   hits: clickCount,
-    //   at_bats: 4,
-    //   walks: 5,
-    //   rbi: 6,
-    //   strikeouts: 0,
-    //   lineup_number: 2,
-    //   single: 0,
-    //   double: 3,
-    //   triple: 1,
-    //   hr: 3
-    // }], 365);
+const setGameObject = () => {
 
     setCookieObject(
       "gameObject",
-      {
-        team_id: 1,
-        opponent: "The other guys",
-        is_winner: true,
-        score_home_team: 14,
-        score_away_team: 8,
-        innings: 7,
-        is_home_team: true,
-      },
+      defaultGame,
       365
     );
-
-    setUserName(getCookie("username"));
-    setUserNameIsEditable(false);
-  };
+    console.log('this is gameObject in setGameObject: ', getCookie('gameObject'));
+    if (getCookie('gameObject')) {
+    let gameOpponent = JSON.parse(getCookie('gameObject'));
+    console.log('gameOpponent: ', gameOpponent.opponent);
+    setOpponent(gameOpponent.opponent);
+    }
+  }
 
   return (
-    <div>
-      <center>
-        <h1>Click the Cookie!!</h1>
-        {getCookie("playerObject") && <p>{testData[0].hits}</p>}
+    <Box sx={{ width: "80%", padding: "20px" }}>
+      <Paper elevation={4} sx={{ width: "fit-content", padding: "10px" }}>
+        <Typography variant="h1" gutterBottom>
+          Spike
+        </Typography>
+        {/* {getCookie("playerObject") && (
+          <Typography variant="body1">
+            Player #{testData[currentBatter].user_id} batting #
+            {testData[currentBatter].lineup_number}
+          </Typography>
+        )} */}
         {getCookie("playerObject") && (
-          <p>{getCookie("playerObject")}</p>
+          <Card sx={{ minWidth: 275 }}>
+            <CardContent>
+              <Typography variant="h6">
+                Player #{testData[currentBatter].user_id} batting #
+                {testData[currentBatter].lineup_number}
+              </Typography>
+              <Typography variant="body2">
+                Hits: {testData[currentBatter].hits}
+              </Typography>
+              <Typography variant="body2">
+                At Bats: {testData[currentBatter].at_bats}
+              </Typography>
+              <Typography variant="body2">
+                Walks: {testData[currentBatter].walks}
+              </Typography>
+              <Typography variant="body2">
+                K's: {testData[currentBatter].strikeouts}
+              </Typography>
+            </CardContent>
+          </Card>
         )}
-        {getCookie("gameObject") && <p>{gameObject.opponent}</p>}
-        <p>This is the current Batter: {Number(currentBatter) + 1}</p>
-        <p>Current Inning: {currentInning.half==='away'?'Top':'Bottom'} {currentInning.inning} </p>
-        <p>Current Outs: {currentOut}</p>
-        {/* {sortRoster.length > 0 &&
-          sortRoster.map((player) => (
-            <p>{`${player.lineup_number} ${player.position} ${player.user_id}`}</p>
-          ))} */}
-        <p>
-          {userNameIsEditable ? (
-            <input
-              value={userName}
-              onChange={(e) => setUserName(e.target.value)}
-            />
-          ) : (
-            `Username: ${userName}`
-          )}
-          <br />
-          {/* Username should go here */}
-          {/* The next block of code is conditional rendering.
-            Look at the documentation https://reactjs.org/docs/conditional-rendering.html
-            if this is new to you. */}
-          {/* 
-              This conditional rendering is using a `ternary` operator. It works like an if/else block.
-              The part at the front is being evaluated. The `?` starts the conditions. 
-              The first condition is what will be done if true.
-              The `:` breaks into the else block.
-              
-             
-
-          
-              ```
-
-            */}
-          {userNameIsEditable ? (
-            <button onClick={saveUsername}>Save Username</button>
-          ) : (
-            <button onClick={editUsername}>Edit Username</button>
-          )}
-        </p>
-        <p>{clickCount}</p>
-        <span
-          role="img"
-          aria-label="cookie"
-          style={{ fontSize: "100px", cursor: "pointer" }}
-          onClick={handleClick}
-        >
-          🍪
-        </span>
-      </center>
-      {!gameInProgress && <button onClick={lineupSet}>setLineup</button>}
-      <button onClick={nextBatter}>Next At Bat</button>
-      <button onClick={addOut}>OUT</button>
-      <button onClick={endGame}>End Game</button>
-    </div>
+        {/* {getCookie("playerObject") && (
+          <Typography variant="body1">
+            On Deck: Player #{testData[onDeck()].user_id}
+          </Typography>
+        )} */}
+        {getCookie("playerObject") && (
+          <Card sx={{ minWidth: 275 }}>
+            <CardContent>
+              <Typography variant="h6">
+                On Deck: Player #{testData[onDeck()].user_id}
+              </Typography>
+              <Typography variant="body2">
+                Hits: {testData[onDeck()].hits}
+              </Typography>
+              <Typography variant="body2">
+                At Bats: {testData[onDeck()].at_bats}
+              </Typography>
+              <Typography variant="body2">
+                Walks: {testData[onDeck()].walks}
+              </Typography>
+              <Typography variant="body2">
+                K's: {testData[onDeck()].strikeouts}
+              </Typography>
+            </CardContent>
+          </Card>
+        )}
+        {getCookie("gameObject") && (
+          <Typography variant="body1">
+            Opponent: {opponent}
+          </Typography>
+        )}
+        {/* <Typography variant='body1'>This is the current Batter: {Number(currentBatter) + 1}</Typography> */}
+        <Typography variant="body1">
+          Current Inning: {currentInning.half === "away" ? "Top" : "Bottom"}{" "}
+          {currentInning.inning}{" "}
+        </Typography>
+        <Typography variant="body1">Current Outs: {currentOut}</Typography>
+        {!gameInProgress && (
+          <Button variant="contained" onClick={lineupSet}>
+            setLineup
+          </Button>
+        )}
+        <Button variant="contained" onClick={nextBatter}>
+          Next At Bat
+        </Button>
+        <Button variant="contained" onClick={addOut}>
+          OUT
+        </Button>
+        <Button variant="contained" onClick={endGame}>
+          End Game
+        </Button>
+        {!opponent && <Button variant="contained" onClick={setGameObject}>
+          Set Game
+        </Button>}
+      </Paper>
+    </Box>
   );
 }
 
