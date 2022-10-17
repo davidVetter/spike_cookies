@@ -33,6 +33,12 @@ function App () {
   const [currentInning, setCurrentInning] = useState(getCookie('currentInning') ? JSON.parse(getCookie('currentInning')) : { inning: 1, half: 'away' });
   const [currentOut, setCurrentOut] = useState(getCookie('outs') || 0);
   const [opponent, setOpponent] = useState(gameDetails.opponent||'');
+  const [currentPlayers, setCurrentPlayers] = useState(getCookie('playerObject')?JSON.parse(getCookie('playerObject')):{});
+
+  let testData;
+  if (getCookie("playerObject")) {
+    testData = JSON.parse(getCookie("playerObject"));
+  }
   
   
   const lineupSet = () => {
@@ -95,6 +101,20 @@ function App () {
     }
   }
 
+  const addSingle = () => {
+    let updatePlayerObject = [...JSON.parse(getCookie('playerObject'))];
+    console.log('This is updatePlayerObject: ', updatePlayerObject);
+    updatePlayerObject[currentBatter].single = Number(updatePlayerObject[currentBatter].single + 1);
+    addHitAtBat(updatePlayerObject);
+    setCookieObject('playerObject', updatePlayerObject, 365);
+    setCurrentPlayers(updatePlayerObject);
+  }
+
+  const addHitAtBat = (updatePlayerObject) => {
+    updatePlayerObject[currentBatter].hits = Number(updatePlayerObject[currentBatter].hits + 1);
+    updatePlayerObject[currentBatter].at_bats = Number(updatePlayerObject[currentBatter].at_bats + 1);
+  }
+
   const addOut = () => {
     let outs = Number(getCookie('outs'));
     // console.log('this is outs: ', outs);
@@ -130,10 +150,10 @@ function App () {
     setOpponent('');
   }
   // This will check for the cookie 'playerObject'and set a variable if it exists
-  let testData;
-  if (getCookie("playerObject")) {
-    testData = JSON.parse(getCookie("playerObject"));
-  }
+  // let testData;
+  // if (getCookie("playerObject")) {
+  //   testData = JSON.parse(getCookie("playerObject"));
+  // }
   // This will check for the cookie 'gameObject' and set a variable if it exists
   let gameObject;
   if (getCookie("gameObject")) {
@@ -186,7 +206,7 @@ const setGameObject = () => {
           <Card sx={{ minWidth: 275 }}>
             <CardContent>
               <Typography variant="h6">
-                Player #{testData[currentBatter].user_id} batting #
+                Player #{currentPlayers.length > 0 && currentPlayers[currentBatter].user_id} batting #
                 {testData[currentBatter].lineup_number}
               </Typography>
               <Typography variant="body2">
@@ -246,15 +266,18 @@ const setGameObject = () => {
             setLineup
           </Button>
         )}
-        <Button variant="contained" onClick={nextBatter}>
+        {gameInProgress && opponent && <Button variant="contained" onClick={nextBatter}>
           Next At Bat
-        </Button>
-        <Button variant="contained" onClick={addOut}>
+        </Button>}
+        {gameInProgress && opponent && <Button variant='contained' onClick={addSingle}>
+          1B
+        </Button>}
+        {gameInProgress && opponent && <Button variant="contained" onClick={addOut}>
           OUT
-        </Button>
-        <Button variant="contained" onClick={endGame}>
+        </Button>}
+        {gameInProgress && opponent && <Button variant="contained" onClick={endGame}>
           End Game
-        </Button>
+        </Button>}
         {!opponent && <Button variant="contained" onClick={setGameObject}>
           Set Game
         </Button>}
