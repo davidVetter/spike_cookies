@@ -1,0 +1,43 @@
+const roster = [{
+    user_id: 1,
+    lineup_number: 10,
+    position: 'P'
+  }, {
+    user_id: 2,
+    lineup_number: 9,
+    position: '1B'
+  }, {
+    user_id: 3,
+    lineup_number: 6,
+    position: 'LC'
+  }, {
+    user_id: 4,
+    lineup_number: 8,
+    position: '3B'
+  }, {
+    user_id: 5,
+    lineup_number: 1,
+    position: 'RF'
+  }, {
+    user_id: 6,
+    lineup_number: 2,
+    position: 'RC'
+  }, {
+    user_id: 7,
+    lineup_number: 3,
+    position: '2B'
+  }, {
+    user_id: 8,
+    lineup_number: 4,
+    position: 'SS'
+  }, {
+    user_id: 9,
+    lineup_number: 7,
+    position: 'LF'
+  }, {
+    user_id: 10,
+    lineup_number: 5,
+    position: 'C'
+  }, ]
+
+  export default roster;
